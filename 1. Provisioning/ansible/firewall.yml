@@ -1,0 +1,37 @@
+---
+- become: true
+  gather_facts: false
+  hosts: gateway
+  tasks:
+    - name: Install UFW
+      apt:
+        name: ufw
+        update_cache: yes
+        state: latest
+
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
+        policy: allow
+
+    - name: UFW Allow Rules
+      community.general.ufw:
+        rule: allow
+        proto: tcp
+        port: "{{ item }}"
+      with_items:
+      - 22
+      - 80
+      - 443
+      - 3000
+      - 5000
+      - 5432
+      - 3306
+      - 9090
+      - 9100
+      - 8080
+      - 13000
+    - name: enable ufw
+      community.general.ufw:
+        state: reloaded
+        policy: allow

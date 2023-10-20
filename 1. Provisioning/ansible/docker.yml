@@ -1,0 +1,47 @@
+---
+- become: true
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Install Aptitude
+      apt:
+        name: aptitude
+        state: latest
+        update_cache: true
+
+    - name: Install Docker Dependencies
+      apt:
+        update_cache: yes
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - gnupg
+          - python3-pip
+          - python3-venv
+          - python3-docker
+          - python3-apt
+          - lsb-release
+
+    - name: Add Docker GPG Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+
+    - name: Install Docker Engine
+      apt:
+        update_cache: true
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - docker-buildx-plugin
+
+    - name: Add User Docker Group
+      user:
+        name: calvin
+        groups: docker
+        append: yes

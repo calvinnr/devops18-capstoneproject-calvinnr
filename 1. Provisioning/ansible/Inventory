@@ -1,0 +1,11 @@
+[appserver]
+103.175.218.224
+
+[gateway]
+103.175.217.130
+
+[all:vars]
+ansible_connection=ssh
+ansible_port=22
+ansible_user="calvin"
+ansible_python_interpreter=/usr/bin/python3.8

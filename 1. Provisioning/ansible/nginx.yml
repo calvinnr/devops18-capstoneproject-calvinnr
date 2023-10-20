@@ -1,0 +1,68 @@
+---
+- become: true
+  gather_facts: false
+  hosts: gateway
+  tasks:
+    - name: Installing NGINX
+      apt:
+        name: nginx
+        state: present
+
+    - name: Create NGINX Reverse Proxy File
+      file:
+        path: /etc/nginx/sites-enabled/rproxy.conf
+        state: touch
+
+    - name: Amend NGINX Revese Proxy File
+      blockinfile:
+          path: /etc/nginx/sites-enabled/rproxy.conf
+          marker: ""
+          block: |
+            server {
+               server_name calvin.studentdumbways.my.id;
+               location / {
+               proxy_pass http://103.175.218.224:3000;
+               }
+            }
+            server {
+               server_name ne-appserver.calvin.studentdumbways.my.id;
+               location / {
+               proxy_pass http://103.175.218.224:9100;
+               }
+            }
+            server {
+               server_name ne-gateway.calvin.studentdumbways.my.id;
+               location / {
+               proxy_pass http://103.175.217.130:9100;
+               }
+            }
+            server {
+               server_name prometheus.calvin.studentdumbways.my.id;
+               location / {
+               proxy_pass http://103.175.218.224:9090;
+               }
+            }
+            server {
+               server_name dashboard.calvin.studentdumbways.my.id;
+               location / {
+               proxy_set_header Host dashboard.calvin.studentdumbways.my.id;
+               proxy_pass http://103.175.218.224:13000;
+               }
+            }
+            server {
+               server_name api.calvin.studentdumbways.my.id;
+               location / {
+               proxy_pass http://103.175.218.224:5000;
+               }
+            }
+
+    - name: Reload NGINX
+      service:
+        name: nginx
+        state: reloaded
+
+    - name: Make Sure NGINX is Running Properly
+      service:
+        name: nginx
+        state: restarted
+        enabled: yes

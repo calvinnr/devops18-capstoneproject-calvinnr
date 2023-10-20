@@ -1,0 +1,26 @@
+---
+- become: true
+  gather_facts: false
+  hosts: appserver
+  tasks:
+    - name: Create Prometheus.yml
+      copy:
+        dest: /home/calvin/prometheus.yml
+        content: |
+          scrape_configs:
+            - job_name: capstone
+              scrape_interval: 5s
+              static_configs:
+              - targets:
+                - ne-appserver.calvin.studentdumbways.my.id
+                - ne-gateway.calvin.studentdumbways.my.id
+
+    - name: Running Prometheus on Top Docker
+      community.docker.docker_container:
+        name: prometheus
+        image: prom/prometheus
+        ports:
+          - 9090:9090
+        restart_policy: unless-stopped
+        volumes:
+          - /home/calvin/prometheus.yml:/etc/prometheus/prometheus.yml

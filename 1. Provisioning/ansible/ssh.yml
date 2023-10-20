@@ -1,0 +1,14 @@
+---
+- become: true
+  gather_facts: false
+  hosts: all
+  tasks:
+    - name: Copy SSH Private Keys
+      copy:
+        src: /home/ubuntu/.ssh/id_rsa
+        dest: /home/calvin/.ssh
+
+    - name: Copy SSH Pubic Keys
+      copy:
+        src: /home/ubuntu/.ssh/id_rsa.pub
+        dest: /home/calvin/.ssh

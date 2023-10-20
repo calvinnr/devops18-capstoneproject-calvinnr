@@ -1,0 +1,24 @@
+---
+- hosts: appserver
+  gather_facts: no
+
+  tasks:
+    - name: Clone Frontend Repository
+      git:
+        clone: yes
+        repo: git@gitlab.com:calvinnr/fe-dumbmerch.git
+        version: master
+        dest: /home/calvin/fe-dumbmerch
+        accept_hostkey: yes
+        key_file: /home/calvin/.ssh/id_rsa
+      become: yes
+
+    - name: Clone Backend Repository
+      git:
+        clone: yes
+        repo: git@gitlab.com:calvinnr/be-dumbmerch.git
+        version: master
+        dest: /home/calvin/be-dumbmerch
+        accept_hostkey: yes
+        key_file: /home/calvin/.ssh/id_rsa
+      become: yes
