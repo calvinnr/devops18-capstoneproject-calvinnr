@@ -56,6 +56,30 @@
                }
             }
 
+    - name: Install Certbot
+      community.general.snap:
+        name: certbot
+        classic: yes
+
+    - name: Link Certbot
+      ansible.builtin.file:
+        src: /snap/bin/certbot
+        dest: /usr/bin/certbot
+        owner: root
+        group: root
+        state: link
+
+    - name: Set certbot trust-plugin-with-root
+      community.general.snap:
+        name:
+          - certbot
+        options:
+          - trust-plugin-with-root=ok
+
+    - name: Install DNS Plugin
+      community.general.snap:
+        name: certbot-dns-cloudflare
+
     - name: Reload NGINX
       service:
         name: nginx
