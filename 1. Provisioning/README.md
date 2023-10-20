@@ -1,5 +1,20 @@
 # 1. Provisioning
 
+## Requirements
+
+#### 1. Multipass Server
+
+<img width="800" alt="Screenshot 2023-10-20 at 18 55 41" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/dfa99e64-b792-4883-abbb-71df32d79a9b">
+
+#### 2. Biznet GIO NEO Lite Servers Type SS 2.2 (App Server)
+
+<img width="800" alt="Screenshot 2023-10-18 at 03 20 02" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/b7f12c7e-99ff-43d1-ab34-2eb3a5cca16d">
+
+#### 3. Biznet GIO NEO Lite Servers Type XS 1.1 (Gateway Server)
+
+<img width="800" alt="Screenshot 2023-10-18 at 03 19 52" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/80db8db6-74b6-4cc3-a9cf-398098450233">
+
+
 ## Infrastructure as a Code: Terraform
 
 ### 1. Instalasi Prasyarat untuk Penyediaan Infrastruktur Server AWS menggunakan Terraform
@@ -156,7 +171,7 @@ terraform validate
 terraform apply
 ```
 
-<img width="1440" alt="Screenshot 2023-10-20 at 00 51 04" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/5a1a2c02-6ccd-4086-b527-1c6ea2243601">
+<img width="800" alt="Screenshot 2023-10-20 at 00 51 04" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/5a1a2c02-6ccd-4086-b527-1c6ea2243601">
 
 Dapat dilihat dari gambar diatas jika server sudah terbuat. Maka, dapat dipastikan bahwa Terraform sudah berjalan dengan benar.
 
@@ -164,5 +179,31 @@ Dapat dilihat dari gambar diatas jika server sudah terbuat. Maka, dapat dipastik
 
 ### 1. Instalasi Ansible
 
+Install Ansible pada node lokal dengan melihat dokumentasi pada website [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html#installing-ansible-on-ubuntu) atau menjalankan script `install_ansible.sh` yang sudah tersedia pada repositori. Berikut isi perintahnya:
 
- 
+```shell
+#!/usr/bin/env bash
+
+sudo apt update
+sudo apt install software-properties-common
+sudo add-apt-repository --yes --update ppa:ansible/ansible
+sudo apt install ansible
+```
+
+<img width="800" alt="Screenshot 2023-10-20 at 18 50 19" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/e4439d68-696f-4578-aa54-2b4634d7a920">
+
+Jalankan script-nya dengan perintah berikut:
+
+```shell
+sh install_ansible.sh
+```
+
+<img width="800" alt="Screenshot 2023-10-20 at 00 55 59" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/1d38c601-abb3-4233-a5f2-263fd72812e3">
+
+Jika instalasi telah selesai dilakukan, maka jalankan perintah berikut untuk memverifikasi bahwa Ansible sudah ter-install pada node dengan baik dan akan muncul versi yang telah ter-install. Terraform yang saya gunakan disini versi `Core 2.15.5` dan berjalan pada `Python3.10`
+
+```shell
+ansible --version
+```
+
+### 2. Membuat file yang dibutuhkan untuk menjalankan Ansible-Playbook
