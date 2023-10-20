@@ -98,11 +98,71 @@ Lalu centang opsi dibawah `Continue to create access key`
 
 Setelah itu, Access keys yang sudah terbuat tadi jangan lupa untuk disimpan id `Access key` dan `Secret access key`-nya.
 
-<img width="800" alt="Screenshot 2023-10-18 at 04 34 33" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/cdcffb8a-07aa-4174-b011-f6ce188e159c">
+<img width="800" alt="Screenshot 2023-10-18 at 04 34 33" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/f82f5e03-3b57-4219-9a4d-828f86b5f637">
 
 Pertama kita set Access Keys yang sudah kita dapatkan tadi agar Terraform memiliki akses untuk membuat Resources di AWS dengan menjalankan perintah:
 
 ```aws
 aws configure
 ```
+Dengan spesifikasi sebagai berikut:
 
+> AWS Access Key ID: (access-key)
+>
+> AWS Secret Access Key: (secret-access-key)
+>
+> Default region name: (blank)
+>
+> Default output format: (blank)
+
+Lalu saya buat folder pada home bernamakan `terraform-aws` setelah saya membuat file bernama `main.tf` lalu saya isikan script berikut:
+
+```terraform
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.16"
+    }
+  }
+
+  required_version = ">= 1.2.0"
+}
+
+provider "aws" {
+  region  = "ap-southeast-1"
+}
+
+resource "aws_instance" "calvin" {
+  ami           = "ami-002843b0a9e09324a"
+  instance_type = "t2.micro"
+  availability_zone = "ap-southeast-1b"
+  associate_public_ip_address = true
+
+  tags = {
+    Name = "ec2-as1-1b-d-calvin"
+  }
+}
+```
+
+Setelah itu jalankan `terraform_command.sh` yang tersedia pada repositori `terraform-aws-infra` dengan isian sebagai berikut:
+
+```shell
+#!/usr/bin/env bash
+
+terraform init
+terraform plan
+terraform validate
+terraform apply
+```
+
+<img width="1440" alt="Screenshot 2023-10-20 at 00 51 04" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/5a1a2c02-6ccd-4086-b527-1c6ea2243601">
+
+Dapat dilihat dari gambar diatas jika server sudah terbuat. Maka, dapat dipastikan bahwa Terraform sudah berjalan dengan benar.
+
+## Configuration Management Tools: Ansible
+
+### 1. Instalasi Ansible
+
+
+ 
