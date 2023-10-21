@@ -1,0 +1,21 @@
+host aws
+   Hostname 13.229.49.115
+   User ubuntu
+   IdentityFile ~/.ssh/id_rsa
+   ServerAliveInterval 300
+   ServerAliveCountMax 10
+
+host app
+   Hostname 103.175.218.224
+   User calvin
+   IdentityFile ~/.ssh/id_rsa
+   ServerAliveInterval 300
+   ServerAliveCountMax 10
+   ProxyCommand ssh gateway -W %h:%p
+
+host gateway
+   Hostname 103.175.217.130
+   User calvin
+   IdentityFile ~/.ssh/id_rsa
+   ServerAliveInterval 300
+   ServerAliveCountMax 10
