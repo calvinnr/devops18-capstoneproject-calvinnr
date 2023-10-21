@@ -207,3 +207,404 @@ ansible --version
 ```
 
 ### 2. Membuat file yang dibutuhkan untuk menjalankan Ansible-Playbook
+
+Disini, saya membuat direktori bernamakan `ansible` lalu di dalamnya terdapat file yang berisikan Inventory, ansible.cfg, docker.yml, firewall.yml, grafana.yml, nginx.yml, node-exporter.yml, prometheus.yml, repo.yml, ssh.yml. Berikut isi script dari file file tersebut:
+
+- Inventory
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 09 02" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/3568cabf-6978-487e-bbd9-9cf8cedd1c17">
+
+```ansible
+[appserver]
+103.175.218.224
+
+[gateway]
+103.175.217.130
+
+[all:vars]
+ansible_connection=ssh
+ansible_port=22
+ansible_user="calvin"
+ansible_python_interpreter=/usr/bin/python3.8
+```
+
+- ansible.cfg
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 09 08" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/142f311a-95b6-42a8-955e-7af89592dfd5">
+
+```ansible
+[defaults]
+inventory = Inventory
+private_key_file = /home/ubuntu/.ssh/id_rsa
+host_key_checking  = False
+timeout = 10
+remote_port = 22
+interpreter_python = auto_silent
+
+[ssh_connection]
+ssh_args = -o ForwardAgent=yes
+```
+
+- docker.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 04 11" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/2efe1a23-6838-4716-9fb6-657133973a70">
+
+```ansible
+---
+- become: true
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Install Aptitude
+      apt:
+        name: aptitude
+        state: latest
+        update_cache: true
+
+    - name: Install Docker Dependencies
+      apt:
+        update_cache: yes
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - gnupg
+          - python3-pip
+          - python3-venv
+          - python3-docker
+          - python3-apt
+          - lsb-release
+
+    - name: Add Docker GPG Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+
+    - name: Install Docker Engine
+      apt:
+        update_cache: true
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - docker-buildx-plugin
+
+    - name: Add User Docker Group
+      user:
+        name: calvin
+        groups: docker
+        append: yes
+```
+
+- firewall.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 04 11 31" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/afa0e4c9-9255-4db3-85b7-ba1123e08016">
+
+```ansible
+---
+- become: true
+  gather_facts: false
+  hosts: gateway
+  tasks:
+    - name: Install UFW
+      apt:
+        name: ufw
+        update_cache: yes
+        state: latest
+
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
+        policy: allow
+
+    - name: UFW Allow Rules
+      community.general.ufw:
+        rule: allow
+        proto: tcp
+        port: "{{ item }}"
+      with_items:
+      - 22
+      - 80
+      - 443
+      - 3000
+      - 5000
+      - 5432
+      - 3306
+      - 9090
+      - 9100
+      - 8080
+      - 13000
+    - name: enable ufw
+      community.general.ufw:
+        state: reloaded
+        policy: allow
+```
+
+- grafana.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 09 19" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/91b9aeab-c36f-4b91-b1db-34cad437d487">
+
+```ansible
+---
+- become: true
+  gather_facts: false
+  hosts: appserver
+  tasks:
+    - name: Set Permission
+      ansible.builtin.file:
+        path: ~/grafana
+        state: directory
+        mode: "0755"
+
+    - name: Set Up Grafana
+      community.docker.docker_container:
+        name: grafana
+        image: grafana/grafana
+        ports:
+          - 13000:3000
+        restart_policy: unless-stopped
+        volumes:
+          - ~/grafana:/var/lib/grafana
+        user: root
+```
+
+- nginx.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 05 14 51" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/f8cf2505-c412-4c52-8809-7f2d6f1527d9">
+<img width="800" alt="Screenshot 2023-10-21 at 05 15 00" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/7a2421a7-71b6-4dd8-8422-fc789ce8f6a5">
+
+```ansible
+---
+- become: true
+  gather_facts: false
+  hosts: gateway
+  tasks:
+    - name: Installing NGINX
+      apt:
+        name: nginx
+        state: present
+
+    - name: Create NGINX Reverse Proxy File
+      file:
+        path: /etc/nginx/sites-enabled/rproxy.conf
+        state: touch
+
+    - name: Amend NGINX Revese Proxy File
+      blockinfile:
+          path: /etc/nginx/sites-enabled/rproxy.conf
+          marker: ""
+          block: |
+            server {
+               server_name calvin.studentdumbways.my.id;
+               location / {
+               proxy_pass http://103.175.218.224:3000;
+               }
+            }
+            server {
+               server_name ne-appserver.calvin.studentdumbways.my.id;
+               location / {
+               proxy_pass http://103.175.218.224:9100;
+               }
+            }
+            server {
+               server_name ne-gateway.calvin.studentdumbways.my.id;
+               location / {
+               proxy_pass http://103.175.217.130:9100;
+               }
+            }
+            server {
+               server_name prometheus.calvin.studentdumbways.my.id;
+               location / {
+               proxy_pass http://103.175.218.224:9090;
+               }
+            }
+            server {
+               server_name dashboard.calvin.studentdumbways.my.id;
+               location / {
+               proxy_set_header Host dashboard.calvin.studentdumbways.my.id;
+               proxy_pass http://103.175.218.224:13000;
+               }
+            }
+            server {
+               server_name api.calvin.studentdumbways.my.id;
+               location / {
+               proxy_pass http://103.175.218.224:5000;
+               }
+            }
+
+    - name: Install Certbot
+      community.general.snap:
+        name: certbot
+        classic: yes
+
+    - name: Link Certbot
+      ansible.builtin.file:
+        src: /snap/bin/certbot
+        dest: /usr/bin/certbot
+        owner: root
+        group: root
+        state: link
+
+    - name: Set certbot trust-plugin-with-root
+      community.general.snap:
+        name:
+          - certbot
+        options:
+          - trust-plugin-with-root=ok
+
+    - name: Install DNS Plugin
+      community.general.snap:
+        name: certbot-dns-cloudflare
+
+    - name: Reload NGINX
+      service:
+        name: nginx
+        state: reloaded
+
+    - name: Make Sure NGINX is Running Properly
+      service:
+        name: nginx
+        state: restarted
+        enabled: yes
+```
+
+- node-exporter.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 07 02" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/be037609-d7cd-49c2-aee9-88946232a84a">
+
+```ansible
+---
+- become: true
+  gather_facts: false
+  hosts: all
+  tasks:
+    - name: Install Node-Exporter
+      community.docker.docker_container:
+        name: node-exporter
+        image: prom/node-exporter
+        ports:
+          - 9100:9100
+        restart_policy: unless-stopped
+```
+
+- prometheus.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 32 52" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/e4b34960-f89e-45ab-affc-aaf3a9249f03">
+
+```ansible
+---
+- become: true
+  gather_facts: false
+  hosts: appserver
+  tasks:
+    - name: Create Prometheus.yml
+      copy:
+        dest: /home/calvin/prometheus.yml
+        content: |
+          scrape_configs:
+            - job_name: capstone
+              scrape_interval: 5s
+              static_configs:
+              - targets:
+                - ne-appserver.calvin.studentdumbways.my.id
+                - ne-gateway.calvin.studentdumbways.my.id
+
+    - name: Running Prometheus on Top Docker
+      community.docker.docker_container:
+        name: prometheus
+        image: prom/prometheus
+        ports:
+          - 9090:9090
+        restart_policy: unless-stopped
+        volumes:
+          - /home/calvin/prometheus.yml:/etc/prometheus/prometheus.yml
+```
+
+- repo.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 52 13" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/0a3c4f3a-1ba8-4461-9d45-a511c72b90e6">
+
+```ansible
+---
+- hosts: appserver
+  gather_facts: no
+
+  tasks:
+    - name: Clone Frontend Repository
+      git:
+        clone: yes
+        repo: git@gitlab.com:calvinnr/fe-dumbmerch.git
+        version: master
+        dest: /home/calvin/fe-dumbmerch
+        accept_hostkey: yes
+        key_file: /home/calvin/.ssh/id_rsa
+      become: yes
+
+    - name: Clone Backend Repository
+      git:
+        clone: yes
+        repo: git@gitlab.com:calvinnr/be-dumbmerch.git
+        version: master
+        dest: /home/calvin/be-dumbmerch
+        accept_hostkey: yes
+        key_file: /home/calvin/.ssh/id_rsa
+      become: yes
+```
+
+- ssh.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 40 14" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/81ea4404-1c3c-41bf-8f96-4c88d454e36a">
+
+```ansible
+---
+- become: true
+  gather_facts: false
+  hosts: all
+  tasks:
+    - name: Copy SSH Private Keys
+      copy:
+        src: /home/ubuntu/.ssh/id_rsa
+        dest: /home/calvin/.ssh
+
+    - name: Copy SSH Pubic Keys
+      copy:
+        src: /home/ubuntu/.ssh/id_rsa.pub
+        dest: /home/calvin/.ssh
+```
+
+### 3. Hasil Ansible-Playbook
+
+- docker.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 05 15" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/65a6ee5a-0de0-4039-906f-ce01b7d386a4">
+
+- firewall.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 04 11 23" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/918d7b94-2808-46a0-b62a-c836b8553969">
+
+- grafana.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 11 40" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/0733084b-549d-4e81-8140-c24095096461">
+
+- nginx.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 05 14 38" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/88a06418-564e-4d05-a06b-943287a7fd50">
+
+- node-exporter.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 06 50" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/41b55aaf-499b-4852-8c88-33374767b110">
+
+- prometheus.yml
+  
+<img width="800" alt="Screenshot 2023-10-21 at 03 32 46" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/16bfe4a1-6836-47dc-aaf3-9fce8c808c5a">
+
+- repo.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 53 32" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/d074ea64-15e0-4fff-8107-e2cd88b0c6b9">
+
+- ssh.yml
+
+<img width="800" alt="Screenshot 2023-10-21 at 03 40 08" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/4d9d7b5f-12c9-4e5a-878f-d0daad894920">
