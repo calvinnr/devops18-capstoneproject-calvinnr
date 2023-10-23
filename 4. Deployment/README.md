@@ -338,9 +338,9 @@ docker:deploy:
     - ssh $SSH_USER@$SSH_HOST "cd $REPOSITORY && git checkout $BRANCH1 && docker compose up -d"
 ```
 
-### 1. Set Up Pipeline Frontend Dumbmerch Staging
+### 3. Set Up Pipeline Frontend Dumbmerch Production
 
-Berikut `.gitlab-ci.yml` yang sudah saya buat pada branch `staging` beserta isinya sebagai berikut:
+Berikut `.gitlab-ci.yml` yang sudah saya buat pada branch `production` beserta isinya sebagai berikut:
 
 ```gitlab
 stages:
@@ -359,7 +359,7 @@ repo:pull:
     - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    - ssh $SSH_USER@$SSH_HOST "docker compose down && cd $DIRECTORY && git checkout $BRANCH1 && git pull && exit"
+    - ssh $SSH_USER@$SSH_HOST "docker compose down && cd $DIRECTORY && git checkout $BRANCH2 && git pull && exit"
 
 docker:image:
   stage: build
@@ -368,9 +368,9 @@ docker:image:
     - docker:dind
   script:
     - export DOCKER_HOST=tcp://docker:2375/
-    - docker build -t $USER_DOCKER/$REPOSITORY:8.0 .
+    - docker build -t $USER_DOCKER/$REPOSITORY:9.0 .
     - docker login -u $USER_DOCKER -p $PASS_DOCKER
-    - docker push $USER_DOCKER/$REPOSITORY:8.0
+    - docker push $USER_DOCKER/$REPOSITORY:9.0
 
 docker:deploy:
   stage: test
@@ -383,7 +383,7 @@ docker:deploy:
     - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    - ssh $SSH_USER@$SSH_HOST "cd $REPOSITORY && git checkout $BRANCH1 && docker compose up -d"
+    - ssh $SSH_USER@$SSH_HOST "cd $REPOSITORY && git checkout $BRANCH2 && docker compose up -d"
 ```
 
 <img width="800" alt="Screenshot 2023-10-23 at 12 02 52" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/41400351-52f4-4caf-acfb-0b9a5793836f">
