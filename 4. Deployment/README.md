@@ -1,6 +1,8 @@
 # 4. Deployment
 
-## 1. Set Up PostgreSQL
+## 4.1 Application
+
+### 1. Set Up PostgreSQL
 
 Disini saya menggunakan [Railway](https://railway.app/) untuk mendeploy DB-nya agar terpisah dari Appserver. Disini, saya sudah membuat sebuah akun dan mendapat Trial sebesar %5 yang bebas digunakan sampai saldo yang diberikan habis. Berikut spesifikasi singkat dari PaaS Railway:
 
@@ -26,9 +28,9 @@ Jika project-nya sudah berhasil dibuat bisa dilihat dari gambar diatas bahwa pro
 
 Disini saya sudah membuat 2 environment yaitu `staging` dan `production`. Dimana setiap environment memiliki variable yang berbeda sehingga kita bisa menyesuaikan kebutuhan environment-nya pada saat men-deploy aplikasi baik di branch `staging` maupun `production`. Yang dimana setiap variable sudah saya set-up .env file-nya menyesuaikan branch/environmentnya.
 
-## 2. Membuat Docker Image Frontend dan Backend Dumbmerch
+### 2. Membuat Docker Image Frontend dan Backend Dumbmerch
 
-### 2.1 Frontend Dumbmerch Staging
+#### 2.1 Frontend Dumbmerch Staging
 
 Berikut `Dockerfile` yang sudah saya buat pada branch `staging` beserta isinya sebagai berikut:
 
@@ -62,7 +64,7 @@ Lalu cek hasil image yang sudah di build dengan menjalankan perintah:
 docker images
 ```
 
-### 2.2 Backend Dumbmerch Staging
+#### 2.2 Backend Dumbmerch Staging
 
 Berikut `Dockerfile` yang sudah saya buat pada branch `staging` beserta isinya sebagai berikut:
 
@@ -91,7 +93,7 @@ Lalu cek hasil image yang sudah di build dengan menjalankan perintah:
 docker images
 ```
 
-### 2.3 Deploy Aplikasi Frontend & Backend Dumbmerch Staging
+#### 2.3 Deploy Aplikasi Frontend & Backend Dumbmerch Staging
 
 Berikut `docker-compose.yml` yang sudah saya buat untuk membuat dan menjalankan multi kontainer beserta isinya sebagai berikut:
 
@@ -130,7 +132,7 @@ Berikut hasil deploy aplikasi Frontend dan Backend Dumbmerch dan sudah ter-integ
 
 <img width="800" alt="Screenshot 2023-10-23 at 01 05 21" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/fed3ed40-d122-454f-a128-987ab5aac630">
 
-### 2.4 Frontend Dumbmerch Production
+#### 2.4 Frontend Dumbmerch Production
 
 Berikut `Dockerfile` yang sudah saya buat pada branch `production` beserta isinya sebagai berikut:
 
@@ -166,7 +168,7 @@ Lalu cek hasil image yang sudah di build dengan menjalankan perintah:
 docker images
 ```
 
-### 2.5 Backend Dumbmerch Production
+#### 2.5 Backend Dumbmerch Production
 
 Berikut `Dockerfile` yang sudah saya buat pada branch `production` beserta isinya sebagai berikut:
 
@@ -195,7 +197,7 @@ Lalu cek hasil image yang sudah di build dengan menjalankan perintah:
 docker images
 ```
 
-### 2.6 Deploy Aplikasi Frontend & Backend Dumbmerch Production
+#### 2.6 Deploy Aplikasi Frontend & Backend Dumbmerch Production
 
 Berikut `docker-compose.yml` yang sudah saya buat untuk membuat dan menjalankan multi kontainer beserta isinya sebagai berikut:
 
@@ -234,3 +236,56 @@ Berikut hasil deploy aplikasi Frontend dan Backend Dumbmerch dan sudah ter-integ
 
 <img width="800" alt="Screenshot 2023-10-23 at 01 05 21" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/fed3ed40-d122-454f-a128-987ab5aac630">
 
+## 4.2 CI/CD
+
+### 1. Set Up Pipeline Frontend Dumbmerch Staging
+
+Berikut `.gitlab-ci.yml` yang sudah saya buat pada branch `staging` beserta isinya sebagai berikut:
+
+```gitlab
+stages:
+  - pull
+  - build
+  - test
+
+repo:pull:
+  stage: pull
+  before_script:
+    - command -v ssh-agent >/dev/null || ( apk add --update openssh )
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - ssh $SSH_USER@$SSH_HOST "docker compose down && cd $DIRECTORY && git checkout $BRANCH1 && git pull && exit"
+
+docker:image:
+  stage: build
+  image: docker:1.11
+  services:
+    - docker:dind
+  script:
+    - export DOCKER_HOST=tcp://docker:2375/
+    - docker build -t $USER_DOCKER/$REPOSITORY:8.0 .
+    - docker login -u $USER_DOCKER -p $PASS_DOCKER
+    - docker push $USER_DOCKER/$REPOSITORY:8.0
+
+docker:deploy:
+  stage: test
+  before_script:
+    - command -v ssh-agent >/dev/null || ( apk add --update openssh )
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - ssh $SSH_USER@$SSH_HOST "cd $REPOSITORY && git checkout $BRANCH1 && docker compose up -d"
+```
+
+<img width="800" alt="Screenshot 2023-10-23 at 11 14 21" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/b44962b9-226f-4dcd-8cb7-f68d5ef132c5">
+
+Pipeline sudah berjalan dengan baik dan semua job sukses pada aplikasi Frontend Dumbmerch Staging
