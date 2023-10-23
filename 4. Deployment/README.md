@@ -338,6 +338,54 @@ docker:deploy:
     - ssh $SSH_USER@$SSH_HOST "cd $REPOSITORY && git checkout $BRANCH1 && docker compose up -d"
 ```
 
-<img width="800" alt="Screenshot 2023-10-23 at 11 14 21" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/b44962b9-226f-4dcd-8cb7-f68d5ef132c5">
+### 1. Set Up Pipeline Frontend Dumbmerch Staging
+
+Berikut `.gitlab-ci.yml` yang sudah saya buat pada branch `staging` beserta isinya sebagai berikut:
+
+```gitlab
+stages:
+  - pull
+  - build
+  - test
+
+repo:pull:
+  stage: pull
+  before_script:
+    - command -v ssh-agent >/dev/null || ( apk add --update openssh )
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - ssh $SSH_USER@$SSH_HOST "docker compose down && cd $DIRECTORY && git checkout $BRANCH1 && git pull && exit"
+
+docker:image:
+  stage: build
+  image: docker:1.11
+  services:
+    - docker:dind
+  script:
+    - export DOCKER_HOST=tcp://docker:2375/
+    - docker build -t $USER_DOCKER/$REPOSITORY:8.0 .
+    - docker login -u $USER_DOCKER -p $PASS_DOCKER
+    - docker push $USER_DOCKER/$REPOSITORY:8.0
+
+docker:deploy:
+  stage: test
+  before_script:
+    - command -v ssh-agent >/dev/null || ( apk add --update openssh )
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - ssh $SSH_USER@$SSH_HOST "cd $REPOSITORY && git checkout $BRANCH1 && docker compose up -d"
+```
+
+<img width="800" alt="Screenshot 2023-10-23 at 12 02 52" src="https://github.com/calvinnr/devops18-capstoneproject-calvinnr/assets/101310300/41400351-52f4-4caf-acfb-0b9a5793836f">
 
 Pipeline sudah berjalan dengan baik dan semua job sukses pada aplikasi Backend Dumbmerch Staging
