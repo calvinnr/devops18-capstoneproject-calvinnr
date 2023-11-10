@@ -4,7 +4,7 @@
 
 1. Developed and maintained robust CI/CD pipelines, enabling frequent and reliable software releases.
 2. Implemented infrastructure as code (IaC) using tools like Terraform and Ansible, resulting in efficient and scalable deployments.
-3. Designed and managed containerized environments using Docker and Kubernetes, optimizing resource utilization and ensuring high availability.
+3. Designed and managed containerized environments using Docker, optimizing resource utilization and ensuring high availability.
 4. Collaborated closely with cross-functional teams, including developers and operations, to streamline processes and improve overall software delivery lifecycle.
 5. Conducted extensive monitoring and logging practices, utilizing tools like Prometheus and Grafana, to proactively identify and resolve issues.
 
@@ -15,7 +15,7 @@
 4. Dockerized Image with Docker
 5. Database used PostgreSQL and Deployed with Railway
 6. SSL Certified Proxies with Certbot
-7. Created within a VM Enviroment with Biznet Gio VPS
+7. Created within a VM Enviroment with Biznet Gio VPS Neo Lite & Amazon Web Services EC2
 8. Working Automated Pipeline CI/CD with GitlabCI
 9. Collect Data Metric with Node Exporter & Prometheus
 10. Monitored with Grafana
